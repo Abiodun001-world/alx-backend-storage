@@ -10,16 +10,16 @@ redis_ = redis.Redis()
 
 
 def count_requests(method: Callable) -> Callable:
-    """ Decortator for counting """
+    """ Decorator for counting requests """
     @wraps(method)
-    def wrapper(url):  # sourcery skip: use-named-expression
+    def wrapper(url):
         """ Wrapper for decorator """
         redis_.incr(f"count:{url}")
         cached_html = redis_.get(f"cached:{url}")
         if cached_html:
             return cached_html.decode('utf-8')
         html = method(url)
-        redis_.setex(f"cached:{url}", 10, html)
+        redis_.setex(f"cached:{url}", 10, html.encode('utf-8'))
         return html
 
     return wrapper
@@ -27,6 +27,6 @@ def count_requests(method: Callable) -> Callable:
 
 @count_requests
 def get_page(url: str) -> str:
-    """ Obtain the HTML content of a  URL """
+    """ Obtain the HTML content of a URL """
     req = requests.get(url)
     return req.text
